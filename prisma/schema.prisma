@@ -21,6 +21,21 @@ model User {
   email     String   @unique
   username  String
   password  String
+  points    Int      @default(0) // <-- TAMBAHKAN KOLOM POIN
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  classifications Classification[]
+}
+
+model Classification {
+  id        String   @id @default(cuid())
+  category  String   // Untuk menyimpan kategori (misal: "Daun", "Plastik Botol")
+  type      String   // Untuk menyimpan jenis (misal: "Organik", "Anorganik")
+  points    Int      // Poin yang didapat dari klasifikasi ini
+  createdAt DateTime @default(now())
+
+  // Relasi ke User
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 }

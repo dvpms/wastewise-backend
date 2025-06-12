@@ -14,9 +14,11 @@
   "dependencies": {
     "@hapi/boom": "^10.0.1",
     "@hapi/hapi": "^21.4.0",
+    "@hapi/jwt": "^3.2.0",
     "@prisma/client": "^6.9.0",
     "bcrypt": "^6.0.0",
-    "joi": "^17.13.3"
+    "joi": "^17.13.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "dotenv": "^16.5.0",
