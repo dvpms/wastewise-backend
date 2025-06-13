@@ -1,6 +1,7 @@
 const prisma = require("../../lib/prisma");
 const bcrypt = require("bcrypt");
 const Boom = require("@hapi/boom");
+const jwt = require("jsonwebtoken");
 
 // --- Handlers for User Routes ---
 
@@ -44,35 +45,75 @@ const registerUserHandler = async (request, h) => {
 };
 
 const loginUserHandler = async (request, h) => {
-  // --- Ambil data dari request ---
+  // --- Ambil data dan cari user ---
   const { email, password } = request.payload;
-
-  // --- Cari user berdasarkan email ---
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     throw Boom.unauthorized("Invalid email or password");
   }
 
-  // --- Bandingkan password yang diinput dengan hash di database ---
+  // --- Bandingkan password ---
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
     throw Boom.unauthorized("Invalid email or password");
   }
 
-  // TODO: Generate JWT di langkah selanjutnya
+  // --- Buat Payload untuk JWT ---
+  const payload = {
+    id: user.id,
+    email: user.email,
+  };
 
+  // --- Buat JWT menggunakan kunci rahasia ---
+  const token = jwt.sign(payload, process.env.JWT_SECRET);
+
+  // --- Kembalikan token asli ---
   return {
     status: "success",
     message: "Login successful",
     data: {
-      // Untuk sementara, kita berikan token palsu
-      token: "dummy-jwt-for-now-will-be-implemented-next",
+      token,
     },
   };
+};
+
+const getUserProfileHandler = async (request, h) => {
+  try {
+    // Ambil ID user dari hasil validasi token
+    const { id: userId } = request.auth.credentials;
+
+    // Cari data user di database
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        points: true,
+      },
+    });
+
+    if (!user) {
+      throw Boom.notFound("User not found");
+    }
+
+    return {
+      status: "success",
+      data: {
+        user,
+      },
+    };
+  } catch (error) {
+    if (Boom.isBoom(error)) {
+      throw error;
+    }
+    throw Boom.internal("Failed to get user profile");
+  }
 };
 
 // --- Ekspor handler ---
 module.exports = {
   registerUserHandler,
   loginUserHandler,
+  getUserProfileHandler,
 };

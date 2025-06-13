@@ -1,9 +1,11 @@
 require("dotenv").config();
 
 const Hapi = require("@hapi/hapi");
+const Jwt = require("@hapi/jwt");
 
 // --- Import Plugin ---
 const usersPlugin = require("./api/users");
+const classificationsPlugin = require("./api/classifications");
 
 const init = async () => {
   // --- Konfigurasi Server ---
@@ -17,10 +19,40 @@ const init = async () => {
     },
   });
 
-  // --- Registrasi Plugin ---
+  await server.register([
+    {
+      plugin: Jwt,
+    },
+  ]);
+
+  // --- Definisi Strategi Otentikasi ---
+  server.auth.strategy("wastewise_jwt", "jwt", {
+    keys: process.env.JWT_SECRET,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: 14400, // Token valid selama 4 jam
+    },
+    validate: (artifacts, request, h) => {
+      // Untuk saat ini, kita anggap token selalu valid jika signature-nya benar
+      return {
+        isValid: true,
+        credentials: {
+          id: artifacts.decoded.payload.id,
+          email: artifacts.decoded.payload.email,
+        },
+      };
+    },
+  });
+
+  // --- Registrasi Plugin Internal (Fitur Aplikasi) ---
   await server.register([
     {
       plugin: usersPlugin,
+    },
+    {
+      plugin: classificationsPlugin, 
     },
   ]);
 

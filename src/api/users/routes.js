@@ -1,5 +1,9 @@
 const Joi = require("joi");
-const { registerUserHandler, loginUserHandler } = require("./handlers");
+const {
+  registerUserHandler,
+  loginUserHandler,
+  getUserProfileHandler,
+} = require("./handlers");
 
 // --- Routes for User Feature ---
 
@@ -29,6 +33,14 @@ const routes = [
           password: Joi.string().required(),
         }),
       },
+    },
+  },
+  {
+    method: "GET",
+    path: "/profile",
+    handler: getUserProfileHandler,
+    options: {
+      auth: "wastewise_jwt", // <-- Melindungi route ini
     },
   },
 ];
