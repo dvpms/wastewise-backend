@@ -111,9 +111,76 @@ const getUserProfileHandler = async (request, h) => {
   }
 };
 
+const updateUserProfileHandler = async (request, h) => {
+  const { id: userId } = request.auth.credentials;
+  const { username, password } = request.payload;
+  const dataToUpdate = {};
+
+  // Cek jika ada username baru, tambahkan ke data yang akan diupdate
+  if (username) {
+    dataToUpdate.username = username;
+  }
+
+  // Cek jika ada password baru, hash terlebih dahulu
+  if (password) {
+    dataToUpdate.password = await bcrypt.hash(password, 10);
+  }
+
+  // Jika tidak ada data untuk diupdate, kembalikan error
+  if (Object.keys(dataToUpdate).length === 0) {
+    throw Boom.badRequest("No data provided for update");
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: dataToUpdate,
+      select: { id: true, email: true, username: true, points: true }, // Kirim kembali data yang aman
+    });
+
+    return {
+      status: "success",
+      message: "Profile updated successfully",
+      data: { user: updatedUser },
+    };
+  } catch (error) {
+    throw Boom.internal("Failed to update profile");
+  }
+};
+
+const getLeaderboardHandler = async (request, h) => {
+  try {
+    const users = await prisma.user.findMany({
+      // Urutkan pengguna berdasarkan poin, dari yang tertinggi ke terendah
+      orderBy: {
+        points: 'desc',
+      },
+      // Ambil hanya 10 pengguna teratas
+      take: 10,
+      // Pilih hanya data yang aman untuk ditampilkan publik
+      select: {
+        username: true,
+        points: true,
+      },
+    });
+
+    return {
+      status: 'success',
+      data: {
+        users,
+      },
+    };
+  } catch (error) {
+    throw Boom.internal('Failed to get leaderboard');
+  }
+};
+
+
 // --- Ekspor handler ---
 module.exports = {
   registerUserHandler,
   loginUserHandler,
   getUserProfileHandler,
+  updateUserProfileHandler,
+  getLeaderboardHandler
 };

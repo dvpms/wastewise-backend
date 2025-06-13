@@ -3,6 +3,8 @@ const {
   registerUserHandler,
   loginUserHandler,
   getUserProfileHandler,
+  updateUserProfileHandler,
+  getLeaderboardHandler,
 } = require("./handlers");
 
 // --- Routes for User Feature ---
@@ -42,6 +44,25 @@ const routes = [
     options: {
       auth: "wastewise_jwt", // <-- Melindungi route ini
     },
+  },
+  {
+    method: "PATCH", // Menggunakan PATCH untuk update parsial
+    path: "/profile",
+    handler: updateUserProfileHandler,
+    options: {
+      auth: "wastewise_jwt",
+      validate: {
+        payload: Joi.object({
+          username: Joi.string().min(3),
+          password: Joi.string().min(6),
+        }),
+      },
+    },
+  },
+  {
+    method: "GET",
+    path: "/leaderboard",
+    handler: getLeaderboardHandler,
   },
 ];
 
