@@ -16,6 +16,7 @@
     "@hapi/hapi": "^21.4.0",
     "@hapi/jwt": "^3.2.0",
     "@prisma/client": "^6.9.0",
+    "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "joi": "^17.13.3",
     "jsonwebtoken": "^9.0.2"
