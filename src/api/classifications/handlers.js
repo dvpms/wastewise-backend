@@ -6,17 +6,22 @@ const axios = require("axios");
 // --- Handlers for Classification Routes ---
 
 const classifyAndAddPointsHandler = async (request, h) => {
-  // 'payload' sekarang adalah stream dari file yang di-upload
-  const fileStream = request.payload.image;
+  // Ambil keseluruhan objek 'image' dari payload
+  const imagePayload = request.payload.image;
   const { id: userId } = request.auth.credentials;
   const mlApiUrl = "http://localhost:8080/klasifikasi-sampah";
 
+  // Pastikan payload gambar diterima dengan benar
+  if (!imagePayload || !imagePayload.hapi) {
+    throw Boom.badRequest("Invalid image payload received.");
+  }
+
   try {
     const formData = new FormData();
-    // Langsung append stream file ke FormData
-    formData.append("file", fileStream, {
-      filename: fileStream.hapi.filename,
-      contentType: fileStream.hapi.headers["content-type"],
+    // Gunakan stream dari payload dan metadata dari properti .hapi
+    formData.append("file", imagePayload, {
+      filename: imagePayload.hapi.filename,
+      contentType: imagePayload.hapi.headers["content-type"],
     });
 
     const mlResponse = await axios.post(mlApiUrl, formData, {
@@ -24,10 +29,8 @@ const classifyAndAddPointsHandler = async (request, h) => {
     });
 
     const mlResult = mlResponse.data;
-
     const pointsAwarded = mlResult.Jenis.toLowerCase() === "organik" ? 5 : 10;
 
-    // Operasi database tetap sama
     await prisma.$transaction([
       prisma.classification.create({
         data: {
@@ -46,6 +49,11 @@ const classifyAndAddPointsHandler = async (request, h) => {
     return h.response(mlResult).code(200);
   } catch (error) {
     console.error("Classification error:", error);
+    // Cek jika error dari axios untuk response yang lebih baik
+    if (error.response) {
+      console.error("Error data:", error.response.data);
+      console.error("Error status:", error.response.status);
+    }
     throw Boom.badGateway("Failed to classify image.");
   }
 };
