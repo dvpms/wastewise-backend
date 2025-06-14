@@ -2,6 +2,7 @@ const Joi = require("joi");
 const {
   createClassificationHandler,
   getClassificationsHandler,
+  classifyAndAddPointsHandler,
 } = require("./handlers");
 
 const routes = [
