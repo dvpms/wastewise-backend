@@ -46,7 +46,7 @@ const classifyAndAddPointsHandler = async (request, h) => {
       }),
     ]);
 
-    return h.response(mlResult).code(200);
+    return h.response({ ...mlResult, pointsAwarded }).code(200);
   } catch (error) {
     console.error("Classification error:", error);
     // Cek jika error dari axios untuk response yang lebih baik
@@ -75,7 +75,7 @@ const createClassificationHandler = async (request, h) => {
           category,
           type,
           points: pointsAwarded,
-          userId, // Hubungkan dengan user yang login
+          userId,
         },
       }),
       // 2. Tambahkan poin ke user terkait
@@ -94,6 +94,7 @@ const createClassificationHandler = async (request, h) => {
         status: "success",
         message: "Classification added successfully",
         data: classification,
+        pointsAwarded,
       })
       .code(201);
   } catch (error) {
