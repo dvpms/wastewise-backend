@@ -30,6 +30,7 @@ const classifyAndAddPointsHandler = async (request, h) => {
 
     const mlResult = mlResponse.data;
     const pointsAwarded = mlResult.Jenis.toLowerCase() === "organik" ? 5 : 10;
+    console.log("ML Result:", mlResult);
 
     await prisma.$transaction([
       prisma.classification.create({
