@@ -1,79 +1,28 @@
-require("dotenv").config();
+// src/server.js (Versi Debugging Minimalis)
+"use strict";
 
 const Hapi = require("@hapi/hapi");
-const Jwt = require("@hapi/jwt");
-
-// --- Import Plugin ---
-const usersPlugin = require("./api/users");
-const classificationsPlugin = require("./api/classifications");
 
 const init = async () => {
-  // --- Konfigurasi Server ---
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.NODE_ENV !== "production" ? "localhost" : "0.0.0.0",
-    routes: {
-      cors: {
-        origin: ["*"],
-      },
-    },
+    port: 5001,
+    host: "0.0.0.0", // Pastikan terikat ke semua antarmuka jaringan
   });
 
-  await server.register([
-    {
-      plugin: Jwt,
-    },
-  ]);
-
-  // --- Definisi Strategi Otentikasi ---
-  server.auth.strategy("wastewise_jwt", "jwt", {
-    keys: process.env.JWT_SECRET,
-    verify: {
-      aud: false,
-      iss: false,
-      sub: false,
-      maxAgeSec: 14400, // Token valid selama 4 jam
-    },
-    validate: (artifacts, request, h) => {
-      // Untuk saat ini, kita anggap token selalu valid jika signature-nya benar
-      return {
-        isValid: true,
-        credentials: {
-          id: artifacts.decoded.payload.id,
-          email: artifacts.decoded.payload.email,
-        },
-      };
-    },
-  });
-
-  // --- Registrasi Plugin Internal (Fitur Aplikasi) ---
-  await server.register([
-    {
-      plugin: usersPlugin,
-    },
-    {
-      plugin: classificationsPlugin, 
-    },
-  ]);
-
-  // --- Penanganan Routes (Endpoint) ---
+  // Membuat satu rute tes yang sangat sederhana
   server.route({
     method: "GET",
-    path: "/",
+    path: "/test",
     handler: (request, h) => {
-      return {
-        status: "success",
-        message: "Welcome to WasteWise API!",
-      };
+      console.log(">>> /test route was hit successfully! <<<"); // Log jika rute diakses
+      return { status: "success", message: "Hapi server is reachable!" };
     },
   });
 
-  // --- Menjalankan Server ---
   await server.start();
-  console.log(`Server running on ${server.info.uri}`);
+  console.log("Minimal server running on %s", server.info.uri);
 };
 
-// --- Penanganan Error ---
 process.on("unhandledRejection", (err) => {
   console.log(err);
   process.exit(1);
