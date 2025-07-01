@@ -9,7 +9,7 @@ const classifyAndAddPointsHandler = async (request, h) => {
   // Ambil keseluruhan objek 'image' dari payload
   const imagePayload = request.payload.image;
   const { id: userId } = request.auth.credentials;
-  const mlApiUrl = "http://localhost:8080/klasifikasi-sampah";
+  const mlApiUrl = "http://localhost:8080/api/klasifikasi-sampah";
 
   // Pastikan payload gambar diterima dengan benar
   if (!imagePayload || !imagePayload.hapi) {
