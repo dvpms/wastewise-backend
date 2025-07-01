@@ -1,30 +1,66 @@
-// src/server.js (Versi Debugging Minimalis)
+// src/server.js (Versi Debugging Lengkap)
 "use strict";
 
+require("dotenv").config();
 const Hapi = require("@hapi/hapi");
+const Jwt = require("@hapi/jwt");
+
+// Impor Plugin
+const usersPlugin = require("./api/users");
+const classificationsPlugin = require("./api/classifications");
 
 const init = async () => {
-  const server = Hapi.server({
-    port: 5001,
-    host: "0.0.0.0", // Pastikan terikat ke semua antarmuka jaringan
-  });
+  console.log("Server initialization started...");
 
-  // Membuat satu rute tes yang sangat sederhana
-  server.route({
-    method: "GET",
-    path: "/test",
-    handler: (request, h) => {
-      console.log(">>> /test route was hit successfully! <<<"); // Log jika rute diakses
-      return { status: "success", message: "Hapi server is reachable!" };
+  const server = Hapi.server({
+    port: process.env.PORT || 5001,
+    host: process.env.NODE_ENV !== "production" ? "localhost" : "0.0.0.0",
+    routes: {
+      cors: {
+        origin: ["*"],
+      },
     },
   });
+  console.log("Hapi server configured.");
+
+  // Registrasi Plugin Eksternal
+  await server.register([{ plugin: Jwt }]);
+  console.log("JWT plugin registered.");
+
+  // Definisi Strategi Otentikasi
+  server.auth.strategy("wastewise_jwt", "jwt", {
+    keys: process.env.JWT_SECRET,
+    verify: {
+      aud: false,
+      iss: false,
+      sub: false,
+      maxAgeSec: 14400,
+    },
+    validate: (artifacts, request, h) => {
+      return {
+        isValid: true,
+        credentials: {
+          id: artifacts.decoded.payload.id,
+          email: artifacts.decoded.payload.email,
+        },
+      };
+    },
+  });
+  console.log("JWT auth strategy defined.");
+
+  // Registrasi Plugin Internal
+  await server.register([
+    { plugin: usersPlugin },
+    { plugin: classificationsPlugin },
+  ]);
+  console.log("Application plugins registered.");
 
   await server.start();
-  console.log("Minimal server running on %s", server.info.uri);
+  console.log(`Server running on ${server.info.uri}`);
 };
 
 process.on("unhandledRejection", (err) => {
-  console.log(err);
+  console.log("FATAL ERROR (unhandledRejection):", err);
   process.exit(1);
 });
 
