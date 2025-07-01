@@ -1,16 +1,20 @@
-require("dotenv").config();
+// src/server.js (Versi Debugging yang Sudah Diperbaiki)
+"use strict";
 
+require("dotenv").config();
 const Hapi = require("@hapi/hapi");
 const Jwt = require("@hapi/jwt");
 
-// --- Import Plugin ---
+// Impor Plugin yang sudah ada
 const usersPlugin = require("./api/users");
 const classificationsPlugin = require("./api/classifications");
+// const contentsPlugin = require('./api/contents'); // <-- Kita hapus sementara
 
 const init = async () => {
-  // --- Konfigurasi Server ---
+  console.log("Server initialization started...");
+
   const server = Hapi.server({
-    port: process.env.PORT,
+    port: process.env.PORT || 5001,
     host: process.env.NODE_ENV !== "production" ? "localhost" : "0.0.0.0",
     routes: {
       cors: {
@@ -18,24 +22,22 @@ const init = async () => {
       },
     },
   });
+  console.log("Hapi server configured.");
 
-  await server.register([
-    {
-      plugin: Jwt,
-    },
-  ]);
+  // Registrasi Plugin Eksternal
+  await server.register([{ plugin: Jwt }]);
+  console.log("JWT plugin registered.");
 
-  // --- Definisi Strategi Otentikasi ---
+  // Definisi Strategi Otentikasi
   server.auth.strategy("wastewise_jwt", "jwt", {
     keys: process.env.JWT_SECRET,
     verify: {
       aud: false,
       iss: false,
       sub: false,
-      maxAgeSec: 14400, // Token valid selama 4 jam
+      maxAgeSec: 14400,
     },
     validate: (artifacts, request, h) => {
-      // Untuk saat ini, kita anggap token selalu valid jika signature-nya benar
       return {
         isValid: true,
         credentials: {
@@ -45,37 +47,22 @@ const init = async () => {
       };
     },
   });
+  console.log("JWT auth strategy defined.");
 
-  // --- Registrasi Plugin Internal (Fitur Aplikasi) ---
+  // Registrasi Plugin Internal
   await server.register([
-    {
-      plugin: usersPlugin,
-    },
-    {
-      plugin: classificationsPlugin, 
-    },
+    { plugin: usersPlugin },
+    { plugin: classificationsPlugin },
+    // { plugin: contentsPlugin }, // <-- Kita hapus sementara
   ]);
+  console.log("Application plugins registered.");
 
-  // --- Penanganan Routes (Endpoint) ---
-  server.route({
-    method: "GET",
-    path: "/",
-    handler: (request, h) => {
-      return {
-        status: "success",
-        message: "Welcome to WasteWise API!",
-      };
-    },
-  });
-
-  // --- Menjalankan Server ---
   await server.start();
   console.log(`Server running on ${server.info.uri}`);
 };
 
-// --- Penanganan Error ---
 process.on("unhandledRejection", (err) => {
-  console.log(err);
+  console.log("FATAL ERROR (unhandledRejection):", err);
   process.exit(1);
 });
 
