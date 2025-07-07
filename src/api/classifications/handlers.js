@@ -8,8 +8,7 @@ const axios = require("axios");
 const classifyAndAddPointsHandler = async (request, h) => {
   const imagePayload = request.payload.image;
   const { id: userId } = request.auth.credentials;
-  const mlApiUrl = "http://localhost:8080/api/klasifikasi-sampah";
-
+  const mlApiUrl = process.env.ML_API_URL;
   if (!imagePayload) {
     throw Boom.badRequest("Invalid image payload received.");
   }
