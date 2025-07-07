@@ -43,7 +43,10 @@ const classifyAndAddPointsHandler = async (request, h) => {
       }),
     ]);
 
-    return h.response(mlResult).code(200);
+    return h.response({
+      ...mlResult,
+      pointsAwarded
+    }).code(200);
   } catch (error) {
     console.error("Classification error:", error);
     if (error.response) {
